@@ -1,0 +1,68 @@
+{
+	"name": "image2min",
+	"version": "1.0.0",
+	"description": "Minify images seamlessly,based on imagemin",
+	"license": "MIT",
+	"repository": "https://github.com/Zachary0476/image2min-cli.git",
+	"funding": "thanks:imagemin-cli",
+	"type": "module",
+	"bin": {
+		"image2min": "./cli.js"
+	},
+	"engines": {
+		"node": ">=18"
+	},
+	"scripts": {
+		"lint": "xo",
+		"test": "ava"
+	},
+	"files": [
+		"cli.js"
+	],
+	"keywords": [
+		"cli",
+		"cli-app",
+		"compress",
+		"imagemin",
+		"imagemin-cli",
+		"gif",
+		"image",
+		"jpeg",
+		"jpg",
+		"minify",
+		"png",
+		"svg"
+	],
+	"dependencies": {
+		"arrify": "^3.0.0",
+		"get-stdin": "^9.0.0",
+		"imagemin": "^9.0.0",
+		"lodash.pairs": "^3.0.1",
+		"meow": "^13.2.0",
+		"ora": "^8.0.1",
+		"plur": "^5.1.0",
+		"strip-indent": "^4.0.0",
+		"uint8array-extras": "^1.1.0"
+	},
+	"devDependencies": {
+		"ava": "^6.1.2",
+		"execa": "^8.0.1",
+		"imagemin-pngquant": "^9.0.2",
+		"xo": "^0.58.0"
+	},
+	"optionalDependencies": {
+		"imagemin-gifsicle": "^7.0.0",
+		"imagemin-jpegtran": "^7.0.0",
+		"imagemin-optipng": "^8.0.0",
+		"imagemin-svgo": "^10.0.1"
+	},
+	"ava": {
+		"workerThreads": false
+	},
+	"xo": {
+		"rules": {
+			"n/process-exit-as-throw": 2,
+			"n/no-unsupported-features": "off"
+		}
+	}
+}
