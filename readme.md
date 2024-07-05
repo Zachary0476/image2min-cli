@@ -23,6 +23,7 @@ $ image2min --help
     --out-dir, -o  Output directory
 
   Examples
+    $ image2min images/*   【Maintain the file tree and replace all existing resources】
     $ image2min images/* --out-dir=build
     $ image2min foo.png > foo-optimized.png
     $ cat foo.png | image2min > foo-optimized.png

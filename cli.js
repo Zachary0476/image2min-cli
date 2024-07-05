@@ -9,6 +9,8 @@ import plur from "plur";
 import stripIndent from "strip-indent";
 import pairs from "lodash.pairs";
 import { isUint8Array } from "uint8array-extras";
+import fs from "fs";
+import path from "path";
 
 const cli = meow(
 	`
@@ -20,8 +22,11 @@ const cli = meow(
 	Options
 	  --plugin, -p   Override the default plugins
 	  --out-dir, -o  Output directory
+		--delete2x, -d Delete @2x image
 
 	Examples
+	  $ image2min images/* 
+	  $ image2min images/* --delete2x
 	  $ image2min images/* --out-dir=build
 	  $ image2min foo.png > foo-optimized.png
 	  $ cat foo.png | image2min > foo-optimized.png
@@ -43,6 +48,10 @@ const cli = meow(
 			outDir: {
 				type: "string",
 				shortFlag: "o",
+			},
+			delete2x: {
+				type: "boolean",
+				shortFlag: "d",
 			},
 		},
 	},
@@ -75,13 +84,36 @@ const normalizePluginOptions = (plugin) => {
 	const pluginOptionsMap = {};
 
 	for (const v of arrify(plugin)) {
-		Object.assign(pluginOptionsMap, typeof v === "object" ? v : { [v]: {} });
+		Object.assign(
+			pluginOptionsMap,
+			typeof v === "object"
+				? v
+				: {
+						[v]: {
+							quality: [0.6, 0.8],
+						},
+					},
+		);
 	}
 
 	return pairs(pluginOptionsMap);
 };
 
-const run = async (input, { outDir, plugin } = {}) => {
+const emptyDirSync = (dir) => {
+	if (fs.existsSync(dir)) {
+		const files = fs.readdirSync(dir);
+		files.forEach((file) => {
+			const currentPath = path.join(dir, file);
+			if (fs.statSync(currentPath).isDirectory()) {
+				emptyDirSync(currentPath);
+			} else {
+				fs.unlinkSync(currentPath);
+			}
+		});
+	}
+};
+
+const run = async (input, { outDir, plugin, delete2X } = {}) => {
 	const pluginOptions = normalizePluginOptions(plugin);
 	const plugins = await requirePlugins(pluginOptions);
 	const spinner = ora("Minifying images");
@@ -90,14 +122,35 @@ const run = async (input, { outDir, plugin } = {}) => {
 		process.stdout.write(await imagemin.buffer(input, { plugins }));
 		return;
 	}
-
-	if (outDir) {
-		spinner.start();
+	if (!outDir && input.length > 1) {
+		console.error(
+			`When '-- outDir' is not provided, only one resource path can be provided at a time`,
+		);
+		return;
 	}
 
-	let files;
+	spinner.start();
+
+	let files,
+		leftFiles = 0;
+	const regx = /^.+@2x\.(png|jpeg|jpg|gif)$/g;
 	try {
 		files = await imagemin(input, { destination: outDir, plugins });
+
+		if (!outDir) {
+			if (fs.statSync(input[0]).isDirectory()) {
+				emptyDirSync(input[0]); // Delete all hierarchical files in the original directory while preserving the folder structure
+			}
+			files.forEach((file) => {
+				if (delete2X && regx.test(file.sourcePath)) return; // Remove images@2x
+				leftFiles++;
+				fs.writeFile(file.sourcePath, file.data, (err) => {
+					if (err) {
+						console.error(`${file.sourcePath} -- fail!`, err);
+					}
+				});
+			});
+		}
 	} catch (error) {
 		spinner.stop();
 		throw error;
@@ -107,20 +160,8 @@ const run = async (input, { outDir, plugin } = {}) => {
 		return;
 	}
 
-	if (!outDir && files.length > 1) {
-		console.error("Cannot write multiple files to stdout, specify `--out-dir`");
-		process.exit(1);
-	}
-
-	if (!outDir) {
-		// process.stdout.write(files[0].data);
-		console.error("Specify at least one '-o <outDir>'");
-		return;
-	}
-
 	spinner.stop();
-
-	console.log(`${files.length} ${plur("image", files.length)} minified`);
+	console.log(`${leftFiles} ${plur("image", files.length)} minified`);
 };
 
 if (cli.input.length === 0 && process.stdin.isTTY) {
