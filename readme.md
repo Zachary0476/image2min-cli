@@ -1,4 +1,4 @@
-# image2min
+# image2min_extend
 
 > Minify images(Base on imagemin-cli)
 

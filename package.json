@@ -1,5 +1,5 @@
 {
-	"name": "image2min",
+	"name": "image2min_extend",
 	"version": "1.0.0",
 	"description": "Minify images seamlessly,based on imagemin",
 	"license": "MIT",
